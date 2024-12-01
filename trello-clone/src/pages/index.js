@@ -1,40 +1,53 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 
 export default function Home() {
     const [boards, setBoards] = useState([]);
-    const [error, setError] = useState(null);
+    const [boardName, setBoardName] = useState("");
+    const router = useRouter();
 
     useEffect(() => {
         async function fetchBoards() {
-            try {
-                const response = await fetch("/api/boards");
-
-                // Check if the response is valid JSON
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                const data = await response.json(); // Parse JSON
-                setBoards(data.data || []); // Safely set boards
-            } catch (err) {
-                console.error("Error fetching boards:", err);
-                setError(err.message); // Set error state
-            }
+            const response = await fetch("/api/boards");
+            const data = await response.json();
+            setBoards(data.data || []);
         }
         fetchBoards();
     }, []);
 
-    if (error) {
-        return <div>Error: {error}</div>;
+    async function createBoard() {
+        if (!boardName) return alert("Enter a board name!");
+        const response = await fetch("/api/boards", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: boardName }),
+        });
+        const newBoard = await response.json();
+        setBoards([...boards, newBoard.data]);
+        setBoardName("");
     }
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Trello Clone - Boards</h1>
-            <div className="grid grid-cols-3 gap-4">
+            <h1 className="text-2xl font-bold">Trello Clone - Boards</h1>
+            <input
+                type="text"
+                value={boardName}
+                onChange={(e) => setBoardName(e.target.value)}
+                placeholder="Board Name"
+                className="border p-2 mr-2"
+            />
+            <button onClick={createBoard} className="bg-blue-500 text-white px-4 py-2 rounded">
+                Add Board
+            </button>
+            <div className="grid grid-cols-3 gap-4 mt-4">
                 {boards.map((board) => (
-                    <div key={board._id} className="p-4 bg-gray-100 rounded-lg shadow">
-                        <h2 className="text-lg font-semibold">{board.name}</h2>
+                    <div
+                        key={board._id}
+                        onClick={() => router.push(`/boards/${board._id}`)}
+                        className="p-4 bg-gray-100 rounded shadow cursor-pointer"
+                    >
+                        {board.name}
                     </div>
                 ))}
             </div>
