@@ -18,7 +18,10 @@ export default function ListColumn({ list, boardId, index, refreshBoard }) {
             });
             if (response.ok) {
                 setNewCardTitle("");
-                refreshBoard();
+                refreshBoard(); // Refresh board after adding a new card
+            } else {
+                const error = await response.json();
+                console.error("Error adding card:", error);
             }
         } catch (error) {
             console.error("Error adding card:", error);
@@ -107,6 +110,7 @@ export default function ListColumn({ list, boardId, index, refreshBoard }) {
                     <Droppable droppableId={list._id} type="CARD">
                         {(provided) => (
                             <div ref={provided.innerRef} {...provided.droppableProps} className="mt-4">
+                                {list.cards.length === 0 && <p className="text-gray-500">No cards</p>}
                                 {list.cards.map((card, index) => (
                                     <CardModal
                                         key={card._id}

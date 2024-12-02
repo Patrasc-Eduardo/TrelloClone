@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     const { cardId } = req.query;
 
     switch (req.method) {
-        case "PUT": // Update card details
+        case "PUT": // Update card
             try {
                 const { title, description } = req.body;
                 const updatedCard = await Card.findByIdAndUpdate(
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
             }
             break;
 
-        case "DELETE": // Delete a card
+        case "DELETE": // Delete card
             try {
                 await Card.findByIdAndDelete(cardId);
                 res.status(200).json({ success: true, message: "Card deleted successfully." });
