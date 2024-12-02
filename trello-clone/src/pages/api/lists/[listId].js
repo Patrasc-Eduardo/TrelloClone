@@ -1,35 +1,49 @@
-import dbConnect from "@/utils/db";
-import List from "@/models/List";
+import dbConnect from "../../../utils/db";
+import List from "../../../models/List"; // Import List model
 
 export default async function handler(req, res) {
-    await dbConnect();
+    await dbConnect();  // Connect to the database
 
-    const { listId } = req.query;
-    const { title } = req.body;
+    const { listId } = req.query;  // Get listId from the URL
 
-    if (req.method === "POST") {
+    // Handle PUT request for updating a list
+    if (req.method === "PUT") {
         try {
-            // Add a new card to the list
-            const newCard = {
-                title: title,
-                description: "", // Default empty description
-            };
+            const { name } = req.body;  // Get the name from the request body
 
-            // Find the list and add the card to the list's cards array
-            const list = await List.findById(listId);
-            if (!list) {
+            // Find and update the list with the new name
+            const updatedList = await List.findByIdAndUpdate(
+                listId, // List to update
+                { name }, // The new name for the list
+                { new: true }  // Return the updated list object
+            );
+
+            // If no list was found to update, return an error
+            if (!updatedList) {
                 return res.status(404).json({ success: false, message: "List not found" });
             }
 
-            list.cards.push(newCard);
-            await list.save();
-
-            res.status(201).json({ success: true, data: list });
+            // Return the updated list
+            res.status(200).json({ success: true, data: updatedList });
         } catch (error) {
-            console.error("Error adding card:", error);
-            res.status(500).json({ success: false, error: error.message });
+            // Catch and return any errors that occur during the update
+            res.status(500).json({ success: false, message: error.message });
+        }
+    } else if (req.method === "DELETE") {
+        // Handle DELETE request for deleting a list
+        try {
+            const deletedList = await List.findByIdAndDelete(listId);
+
+            if (!deletedList) {
+                return res.status(404).json({ success: false, message: "List not found" });
+            }
+
+            res.status(200).json({ success: true, message: "List deleted successfully" });
+        } catch (error) {
+            res.status(500).json({ success: false, message: error.message });
         }
     } else {
+        // If the request method is not PUT or DELETE, respond with Method Not Allowed
         res.status(405).json({ success: false, message: "Method Not Allowed" });
     }
 }
