@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import Navbar from "@/components/Navbar";
+import Link from "next/link";
 
 export default function Home() {
     const [boards, setBoards] = useState([]);
     const [boardName, setBoardName] = useState("");
-    const router = useRouter();
 
     useEffect(() => {
         async function fetchBoards() {
@@ -15,41 +15,48 @@ export default function Home() {
         fetchBoards();
     }, []);
 
-    async function createBoard() {
-        if (!boardName) return alert("Enter a board name!");
+    async function addBoard() {
+        if (!boardName) return alert("Board name cannot be empty!");
         const response = await fetch("/api/boards", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name: boardName }),
         });
         const newBoard = await response.json();
-        setBoards([...boards, newBoard.data]);
+        setBoards((prev) => [...prev, newBoard.data]);
         setBoardName("");
     }
 
     return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold">Trello Clone - Boards</h1>
-            <input
-                type="text"
-                value={boardName}
-                onChange={(e) => setBoardName(e.target.value)}
-                placeholder="Board Name"
-                className="border p-2 mr-2"
-            />
-            <button onClick={createBoard} className="bg-blue-500 text-white px-4 py-2 rounded">
-                Add Board
-            </button>
-            <div className="grid grid-cols-3 gap-4 mt-4">
-                {boards.map((board) => (
-                    <div
-                        key={board._id}
-                        onClick={() => router.push(`/boards/${board._id}`)}
-                        className="p-4 bg-gray-100 rounded shadow cursor-pointer"
+        <div>
+            <Navbar />
+            <div className="p-8 mt-16">
+                <div className="mb-8">
+                    <input
+                        type="text"
+                        placeholder="Enter board name"
+                        value={boardName}
+                        onChange={(e) => setBoardName(e.target.value)}
+                        className="p-2 rounded-lg border w-1/3 mr-4"
+                    />
+                    <button
+                        onClick={addBoard}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg"
                     >
-                        {board.name}
-                    </div>
-                ))}
+                        Add Board
+                    </button>
+                </div>
+                <div className="grid grid-cols-3 gap-6">
+                    {boards.map((board) => (
+                        <Link
+                            href={`/boards/${board._id}`}
+                            key={board._id}
+                            className="block bg-white shadow-lg rounded-lg p-4 hover:bg-gray-100"
+                        >
+                            <h2 className="text-xl font-bold">{board.name}</h2>
+                        </Link>
+                    ))}
+                </div>
             </div>
         </div>
     );
