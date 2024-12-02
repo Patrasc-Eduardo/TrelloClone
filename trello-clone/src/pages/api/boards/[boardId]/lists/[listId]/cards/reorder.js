@@ -1,6 +1,5 @@
 import dbConnect from "@/utils/db";
 import List from "@/models/List";
-import Card from "@/models/Card";
 
 export default async function handler(req, res) {
     await dbConnect();
@@ -8,12 +7,12 @@ export default async function handler(req, res) {
     const { listId } = req.query;
 
     switch (req.method) {
-        case "POST":
+        case "PUT":
             try {
-                const { title } = req.body;
-                const newCard = await Card.create({ title, listId });
-                await List.findByIdAndUpdate(listId, { $push: { cards: newCard._id } });
-                res.status(201).json({ success: true, data: newCard });
+                const { cards } = req.body;
+                const updatedList = await List.findByIdAndUpdate(listId, { cards }, { new: true });
+                if (!updatedList) return res.status(404).json({ success: false, message: "List not found" });
+                res.status(200).json({ success: true, data: updatedList });
             } catch (error) {
                 res.status(500).json({ success: false, error: error.message });
             }

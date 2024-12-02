@@ -1,76 +1,94 @@
 import { useState } from "react";
+import { Draggable } from "react-beautiful-dnd";
 
-export default function CardModal({ card, onClose }) {
-    const [title, setTitle] = useState(card.title);
-    const [description, setDescription] = useState(card.description || "");
-    const [image, setImage] = useState(card.image || null);
+export default function CardModal({ card, listId, index, refreshBoard }) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [tempCardTitle, setTempCardTitle] = useState(card.title);
+    const [tempCardDescription, setTempCardDescription] = useState(card.description || "");
 
-    async function updateCard() {
-        const response = await fetch(`/api/cards/${card._id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, description, image }),
-        });
-        if (response.ok) {
-            onClose();
+    async function saveCardDetails() {
+        try {
+            const response = await fetch(`/api/cards/${card._id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: tempCardTitle, description: tempCardDescription }),
+            });
+            if (response.ok) {
+                setIsModalOpen(false);
+                refreshBoard();
+            }
+        } catch (error) {
+            console.error("Error updating card:", error);
         }
     }
 
     async function deleteCard() {
-        const response = await fetch(`/api/cards/${card._id}`, {
-            method: "DELETE",
-        });
-        if (response.ok) {
-            onClose();
+        try {
+            const response = await fetch(`/api/cards/${card._id}`, {
+                method: "DELETE",
+            });
+            if (response.ok) {
+                refreshBoard();
+            }
+        } catch (error) {
+            console.error("Error deleting card:", error);
         }
     }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-96">
-                <h2 className="text-xl font-bold mb-4">Edit Card</h2>
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="border rounded-lg px-4 py-2 w-full mb-4"
-                    placeholder="Card title"
-                />
-                <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="border rounded-lg px-4 py-2 w-full mb-4"
-                    placeholder="Card description"
-                ></textarea>
-                <div className="mb-4">
-                    <label className="block mb-2">Upload Image:</label>
-                    <input
-                        type="file"
-                        onChange={(e) => setImage(e.target.files[0])}
-                        className="border rounded-lg px-4 py-2 w-full"
-                    />
-                </div>
-                <div className="flex justify-between">
-                    <button
-                        onClick={updateCard}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg"
-                    >
-                        Save
-                    </button>
-                    <button
-                        onClick={deleteCard}
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg"
-                    >
-                        Delete
-                    </button>
-                </div>
-                <button
-                    onClick={onClose}
-                    className="mt-4 block mx-auto text-blue-600 hover:underline"
+        <Draggable draggableId={card._id} index={index}>
+            {(provided) => (
+                <div
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    ref={provided.innerRef}
+                    className="bg-gray-100 p-2 rounded shadow mb-2"
                 >
-                    Cancel
-                </button>
-            </div>
-        </div>
+                    <div onClick={() => setIsModalOpen(true)} className="cursor-pointer">
+                        {card.title}
+                    </div>
+                    {isModalOpen && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white p-4 rounded-lg shadow-lg w-1/3">
+                                <h2 className="text-xl font-bold mb-4">Edit Card</h2>
+                                <input
+                                    type="text"
+                                    value={tempCardTitle}
+                                    onChange={(e) => setTempCardTitle(e.target.value)}
+                                    className="w-full p-2 border rounded mb-4"
+                                />
+                                <textarea
+                                    value={tempCardDescription}
+                                    onChange={(e) => setTempCardDescription(e.target.value)}
+                                    className="w-full p-2 border rounded mb-4"
+                                    rows="4"
+                                    placeholder="Add a description"
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        onClick={saveCardDetails}
+                                        className="bg-green-500 text-white px-4 py-2 rounded"
+                                    >
+                                        Save
+                                    </button>
+                                    <button
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="bg-gray-500 text-white px-4 py-2 rounded"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={deleteCard}
+                                        className="bg-red-500 text-white px-4 py-2 rounded"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </Draggable>
     );
 }
