@@ -4,32 +4,37 @@ import Navbar from "@/components/Navbar";
 import ListColumn from "@/components/ListColumn";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { FiEdit, FiSave, FiX } from "react-icons/fi";
+import posthog from "posthog-js";  // Import PostHog for tracking
 
 export default function BoardPage() {
   const router = useRouter();
   const { boardId } = router.query;
+
   const [board, setBoard] = useState(null);
   const [isEditingBoardName, setIsEditingBoardName] = useState(false);
   const [tempBoardName, setTempBoardName] = useState("");
   const [newListName, setNewListName] = useState("");
 
+  // Fetch the board data when boardId is available
   useEffect(() => {
     if (boardId) fetchBoard();
   }, [boardId]);
 
+  // Function to fetch the board details
   async function fetchBoard() {
     try {
       const response = await fetch(`/api/boards/${boardId}`);
       const data = await response.json();
       if (data.success) {
         setBoard(data.data);
-        setTempBoardName(data.data.name);
+        setTempBoardName(data.data.name);  // Set the initial board name
       }
     } catch (error) {
       console.error("Error fetching board:", error);
     }
   }
 
+  // Function to save the updated board name
   async function saveBoardName() {
     if (!tempBoardName.trim()) return alert("Board name cannot be empty!");
     try {
@@ -41,12 +46,19 @@ export default function BoardPage() {
       if (response.ok) {
         setIsEditingBoardName(false);
         fetchBoard();
+
+        // Track board name change with PostHog
+        posthog.capture("board_name_edited", {
+          boardId,
+          newBoardName: tempBoardName,
+        });
       }
     } catch (error) {
       console.error("Error updating board name:", error);
     }
   }
 
+  // Function to add a new list
   async function addList() {
     if (!newListName.trim()) return alert("List name cannot be empty!");
     try {
@@ -58,12 +70,19 @@ export default function BoardPage() {
       if (response.ok) {
         setNewListName("");
         fetchBoard();
+
+        // Track list creation with PostHog
+        posthog.capture("list_created", {
+          listName: newListName,
+          boardId,
+        });
       }
     } catch (error) {
       console.error("Error adding list:", error);
     }
   }
 
+  // Handle the drag-and-drop logic for lists and cards
   async function onDragEnd(result) {
     const { source, destination, type } = result;
 
@@ -81,6 +100,12 @@ export default function BoardPage() {
           body: JSON.stringify({ lists: updatedLists.map((list) => list._id) }),
         });
         fetchBoard();
+
+        // Track list reorder with PostHog
+        posthog.capture("list_reordered", {
+          boardId,
+          newOrder: updatedLists.map((list) => list._id),
+        });
       } catch (error) {
         console.error("Error reordering lists:", error);
       }
@@ -112,12 +137,20 @@ export default function BoardPage() {
           }),
         });
         fetchBoard();
+
+        // Track card reorder with PostHog
+        posthog.capture("card_reordered", {
+          boardId,
+          sourceListId: sourceList._id,
+          destinationListId: destinationList._id,
+        });
       } catch (error) {
         console.error("Error reordering cards:", error);
       }
     }
   }
 
+  // If the board is still loading, show a loading indicator
   if (!board) return <div>Loading...</div>;
 
   return (
