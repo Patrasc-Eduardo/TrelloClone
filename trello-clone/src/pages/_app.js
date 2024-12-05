@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import "../styles/globals.css";
 import posthog from "posthog-js";
+import dynamic from "next/dynamic";
 
 function MyApp({ Component, pageProps }) {
     useEffect(() => {
