@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "mongoose": "^8.8.3",
+    "mongoose": "^8.9.5",
     "next": "15.0.3",
     "posthog-js": "^1.194.2",
     "react": "19.0.0-rc-66855b96-20241106",
